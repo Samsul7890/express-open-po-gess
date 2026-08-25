@@ -1,0 +1,143 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider        = "prisma-client-js"
+  binaryTargets   = ["native"]
+  previewFeatures = ["driverAdapters"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  pk_user_id   String    @id @default(uuid()) @db.Uuid
+  name         String    @db.VarChar(100)
+  email        String?   @unique @db.VarChar(100)
+  phone_number String?   @unique @db.VarChar(13)
+  role         String    @default("customer") @db.VarChar(50)
+  google_id    String?   @db.VarChar(255)
+  password     String?   @db.VarChar(255)
+  Store         Store[]
+  OrderPO       OrderPO[]
+  CustomerStore CustomerStore[]
+
+  @@map("user")
+}
+
+model Store {
+  pk_store_id  String    @id @default(uuid()) @db.Uuid
+  store_name   String    @db.VarChar(100)
+  banner_path  String?   @db.VarChar(255)
+  avatar_path  String?   @db.VarChar(255)
+  phone_number String?   @db.VarChar(13)
+  owner        String    @db.Uuid
+  user         User      @relation(fields: [owner], references: [pk_user_id])
+  Product       Product[]
+  OpenPO        OpenPO[]
+  CustomerStore CustomerStore[]
+
+  @@map("store")
+}
+
+model Product {
+  pk_product_id     Int                 @id @default(autoincrement())
+  product_name      String              @db.VarChar(100)
+  description       String?             @db.Text
+  price             Float
+  fk_store_id       String              @db.Uuid
+  deleted_at        DateTime?
+  store             Store               @relation(fields: [fk_store_id], references: [pk_store_id])
+  Galery            Galery[]
+  AdditionalProduct AdditionalProduct[]
+  OpenPO            OpenPO[]
+
+  @@map("product")
+}
+
+model Galery {
+  pk_galery_id  Int     @id @default(autoincrement())
+  galery_path   String  @db.VarChar(255)
+  fk_product_id Int
+  product       Product @relation(fields: [fk_product_id], references: [pk_product_id])
+
+  @@map("galery")
+}
+
+model AdditionalProduct {
+  pk_additional_id Int            @id @default(autoincrement())
+  name             String         @db.VarChar(100)
+  price            Float
+  fk_product_id    Int
+  product          Product        @relation(fields: [fk_product_id], references: [pk_product_id])
+  AdditionalPO     AdditionalPO[]
+
+  @@map("additional_product")
+}
+
+model OpenPO {
+  pk_po_id      String    @id @default(uuid()) @db.Uuid
+  start_date    DateTime?
+  end_date      DateTime?
+  cut_off       Int // days before fulfillment to lock edits
+  always_ready  Boolean   @default(false)
+  fk_product_id Int
+  fk_store_id   String    @db.Uuid
+  product       Product   @relation(fields: [fk_product_id], references: [pk_product_id])
+  store         Store     @relation(fields: [fk_store_id], references: [pk_store_id])
+  OrderPO       OrderPO[]
+
+  @@map("open_po")
+}
+
+model OrderPO {
+  pk_order_id    Int            @id @default(autoincrement())
+  fk_user_id     String         @db.Uuid
+  fk_po_id       String         @db.Uuid
+  requested_date DateTime
+  status         OrderStatus    @default(incoming)
+  qty            Int
+  price          Float
+  notes          String?        @db.Text
+  user           User           @relation(fields: [fk_user_id], references: [pk_user_id])
+  openPO         OpenPO         @relation(fields: [fk_po_id], references: [pk_po_id])
+  additionals    AdditionalPO[]
+  created_at     DateTime       @default(now())
+  updated_at     DateTime       @updatedAt
+
+  @@map("order_po")
+}
+
+model AdditionalPO {
+  pk_additional_po_id Int               @id @default(autoincrement())
+  fk_additional_id    Int
+  fk_order_id         Int
+  price               Float
+  additional          AdditionalProduct @relation(fields: [fk_additional_id], references: [pk_additional_id])
+  order               OrderPO           @relation(fields: [fk_order_id], references: [pk_order_id])
+
+  @@map("additional_po")
+}
+
+enum OrderStatus {
+  incoming
+  confirm
+  cancel
+  done
+}
+
+model CustomerStore {
+  pk_customer_store_id Int      @id @default(autoincrement())
+  fk_user_id          String   @db.Uuid
+  fk_store_id         String   @db.Uuid
+  created_at          DateTime @default(now())
+
+  user  User  @relation(fields: [fk_user_id], references: [pk_user_id], onDelete: Cascade)
+  store Store @relation(fields: [fk_store_id], references: [pk_store_id], onDelete: Cascade)
+
+  @@unique([fk_user_id, fk_store_id])
+  @@map("customer_store")
+}
+
