@@ -4,7 +4,7 @@ import { createStoreSchema, updateStoreSchema } from "./store.dto"
 import { sendSuccess, sendError } from "../../utils/response"
 
 export const createStoreHandler = async (req: Request, res: Response) => {
-  console.log(req)
+  console.log("Creating store:", req.body)
   try {
     const { error, value } = createStoreSchema.validate(req.body)
     if (error) {
