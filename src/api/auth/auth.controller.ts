@@ -13,7 +13,8 @@ export class AuthController {
       const response = await authService.register(value)
       res.cookie("token", response.token, {
         httpOnly: true,
-        sameSite: "lax",
+        sameSite: "none",
+        secure: true,
         maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
       })
       return sendSuccess(res, { user: response.user }, "Registration successful", 201)
@@ -34,7 +35,8 @@ export class AuthController {
       const response = await authService.login(value)
       res.cookie("token", response.token, {
         httpOnly: true,
-        sameSite: "lax",
+        sameSite: "none",
+        secure: true,
         maxAge: 7 * 24 * 60 * 60 * 1000
       })
       return sendSuccess(res, { user: response.user }, "Login successful")
@@ -60,7 +62,8 @@ export class AuthController {
       // Set the fresh token containing the updated name in the cookie
       res.cookie("token", response.token, {
         httpOnly: true,
-        sameSite: "lax",
+        sameSite: "none",
+        secure: true,
         maxAge: 7 * 24 * 60 * 60 * 1000
       })
       
@@ -108,7 +111,8 @@ export class AuthController {
       console.log("token", response.token)
       res.cookie("token", response.token, {
         httpOnly: true,
-        sameSite: "lax",
+        sameSite: "none",
+        secure: true,
         maxAge: 7 * 24 * 60 * 60 * 1000
       })
       res.redirect(env.frontendUrl)
