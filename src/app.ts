@@ -11,7 +11,26 @@ import { env } from "./config/env"
 const app = express()
 
 // ─── Core Middleware ────────────────────────────────────────────────────────
-app.use(cors({ origin: env.frontendUrl, credentials: true }))
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      // Allow requests with no origin (like mobile apps or curl requests)
+      if (!origin) return callback(null, true)
+      
+      // Allow localhost, any Vercel preview URL, or the exact FRONTEND_URL
+      if (
+        origin === env.frontendUrl || 
+        origin.endsWith('.vercel.app') || 
+        origin.includes('localhost')
+      ) {
+        return callback(null, true)
+      }
+      
+      callback(new Error('Not allowed by CORS'))
+    },
+    credentials: true,
+  })
+)
 app.use(cookieParser())
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
