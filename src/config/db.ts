@@ -3,10 +3,11 @@ import { PrismaPg } from "@prisma/adapter-pg"
 import { PrismaClient } from "@prisma/client"
 import { env } from "./env"
 
-const isRemoteDb = process.env.DATABASE_URL?.includes("supabase") || process.env.DATABASE_URL?.includes("sslmode=require")
+const dbUrl = env.databaseUrl
+const isRemoteDb = dbUrl.includes("supabase") || dbUrl.includes("pooler") || dbUrl.includes("sslmode=require") || !dbUrl.includes("localhost")
 
 const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
+  connectionString: dbUrl,
   ...(isRemoteDb ? { ssl: { rejectUnauthorized: false } } : {}),
 })
 const adapter = new PrismaPg(pool)
@@ -22,4 +23,5 @@ export const connectDB = async (): Promise<void> => {
     process.exit(-1)
   }
 }
+
 

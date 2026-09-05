@@ -1,29 +1,26 @@
 import { createClient, SupabaseClient } from "@supabase/supabase-js"
+import { env } from "./env"
 
 /**
  * Supabase Admin Client (server-side only, lazy initialization)
  *
- * Uses the service_role key — bypasses Row Level Security.
- * NEVER expose this key to the frontend.
- *
- * The client is only created on first use. If SUPABASE_URL /
- * SUPABASE_SERVICE_ROLE_KEY are not set (e.g. local Docker with plain
- * Postgres), the app starts fine — it only throws if you actually call
- * supabase.storage / supabase.auth etc.
+ * Uses the secret/service_role key — bypasses Row Level Security.
+ * Supports standard Supabase keys and Vercel Supabase Integration environment variables:
+ * - SUPABASE_URL / NEXT_PUBLIC_SUPABASE_URL
+ * - SUPABASE_SECRET_KEY / SUPABASE_SERVICE_ROLE_KEY
  */
 let _client: SupabaseClient | null = null
 
 export const supabase = new Proxy({} as SupabaseClient, {
   get(_target, prop) {
     if (!_client) {
-      const url = process.env.SUPABASE_URL
-      const key = process.env.SUPABASE_SERVICE_ROLE_KEY
+      const url = env.supabase.url || process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL
+      const key = env.supabase.serviceRoleKey || process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY
 
       if (!url || !key) {
         throw new Error(
           `Supabase client not configured. ` +
-          `Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY env vars to use Supabase features ` +
-          `(Storage, Auth, Realtime). Not needed if you only use Prisma + local Postgres.`
+          `Set SUPABASE_URL (or NEXT_PUBLIC_SUPABASE_URL) and SUPABASE_SECRET_KEY (or SUPABASE_SERVICE_ROLE_KEY) env vars.`
         )
       }
 
@@ -35,3 +32,4 @@ export const supabase = new Proxy({} as SupabaseClient, {
     return (_client as any)[prop]
   },
 })
+
