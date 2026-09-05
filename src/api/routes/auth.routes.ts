@@ -1,8 +1,8 @@
 import { Router, Request, Response } from "express"
-import passport from "@/config/passport"
-import { signToken } from "@/utils/jwt"
-import { sendSuccess, sendError } from "@/utils/response"
-import { authenticate } from "@/middleware/auth"
+import passport from "../../config/passport"
+import { signToken } from "../../utils/jwt"
+import { sendSuccess, sendError } from "../../utils/response"
+import { authenticate } from "../../middleware/auth"
 import { authController } from "../auth/auth.controller"
 
 const router = Router()

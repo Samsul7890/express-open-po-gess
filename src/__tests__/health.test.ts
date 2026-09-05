@@ -5,7 +5,7 @@ jest.mock("swagger-jsdoc", () => {
   return jest.fn().mockReturnValue({})
 })
 
-import app from "@/app"
+import app from "../app"
 
 describe("GET /api/health", () => {
   it("should return 200 OK with success true", async () => {

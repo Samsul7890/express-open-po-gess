@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from "express"
-import { verifyToken } from "@/utils/jwt"
-import type { JwtPayload } from "@/utils/jwt"
-import { sendError } from "@/utils/response"
+import { verifyToken } from "../utils/jwt"
+import type { JwtPayload } from "../utils/jwt"
+import { sendError } from "../utils/response"
 
 export type { JwtPayload }
 

@@ -2,7 +2,7 @@ import { Request, Response } from "express"
 import { authService } from "./auth.service"
 import { registerSchema, loginSchema, updateSchema, changePasswordSchema } from "./auth.dto"
 import { sendSuccess, sendError } from "../../utils/response"
-import { env } from "@/config/env"
+import { env } from "../../config/env"
 
 export class AuthController {
   async register(req: Request, res: Response) {
