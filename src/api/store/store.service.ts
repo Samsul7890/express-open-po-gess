@@ -1,14 +1,6 @@
-import fs from "fs"
-import path from "path"
 import { createStoreData, getStoreByIdData, getStoresByOwnerData, updateStoreData, getStoresByCustomerData } from "./store.data"
 import { Store } from "./store.model"
-
-const deleteFile = (filePath: string) => {
-  const fullPath = path.join(process.cwd(), filePath)
-  if (fs.existsSync(fullPath)) {
-    fs.unlinkSync(fullPath)
-  }
-}
+import { uploadToSupabase, deleteFromSupabase } from "../../services/storage.service"
 
 export const createStore = async (
   ownerId: string,
@@ -19,11 +11,11 @@ export const createStore = async (
   let avatar_path = null
 
   if (files?.banner && files.banner.length > 0) {
-    banner_path = `uploads/${files.banner[0].filename}`
+    banner_path = await uploadToSupabase(files.banner[0], "banners")
   }
 
   if (files?.avatar && files.avatar.length > 0) {
-    avatar_path = `uploads/${files.avatar[0].filename}`
+    avatar_path = await uploadToSupabase(files.avatar[0], "avatars")
   }
 
   const newStore = await createStoreData({
@@ -71,17 +63,17 @@ export const updateStore = async (
   if (files?.banner && files.banner.length > 0) {
     // Delete old banner
     if (existingStore.banner_path) {
-      deleteFile(existingStore.banner_path)
+      await deleteFromSupabase(existingStore.banner_path)
     }
-    banner_path = `uploads/${files.banner[0].filename}`
+    banner_path = await uploadToSupabase(files.banner[0], "banners")
   }
 
   if (files?.avatar && files.avatar.length > 0) {
     // Delete old avatar
     if (existingStore.avatar_path) {
-      deleteFile(existingStore.avatar_path)
+      await deleteFromSupabase(existingStore.avatar_path)
     }
-    avatar_path = `uploads/${files.avatar[0].filename}`
+    avatar_path = await uploadToSupabase(files.avatar[0], "avatars")
   }
 
   const updatedStore = await updateStoreData(storeId, {
@@ -93,4 +85,5 @@ export const updateStore = async (
 
   return updatedStore
 }
+
 

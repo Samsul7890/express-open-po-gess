@@ -1,15 +1,7 @@
-import fs from "fs"
-import path from "path"
 import { createProductData, deleteProductData, getProductByIdData, getProductsByStoreIdData, updateProductData } from "./product.data"
 import { getStoreByIdData } from "../store/store.data"
 import { prisma } from "../../config/db"
-
-const deleteFile = (filePath: string) => {
-  const fullPath = path.join(process.cwd(), filePath)
-  if (fs.existsSync(fullPath)) {
-    fs.unlinkSync(fullPath)
-  }
-}
+import { uploadToSupabase, deleteFromSupabase } from "../../services/storage.service"
 
 export const createProduct = async (
   storeId: string,
@@ -22,9 +14,17 @@ export const createProduct = async (
   if (!store) throw new Error("Store not found")
   if (store.owner !== ownerId) throw new Error("Forbidden")
 
-  const galeryData = files && files.length > 0 ? files.map(f => ({
-    galery_path: `uploads/${f.filename}`
-  })) : []
+  const uploadedGaleryPaths: string[] = []
+  if (files && files.length > 0) {
+    for (const file of files) {
+      const url = await uploadToSupabase(file, "products")
+      uploadedGaleryPaths.push(url)
+    }
+  }
+
+  const galeryData = uploadedGaleryPaths.map(path => ({
+    galery_path: path
+  }))
 
   const additionalData = additionals && additionals.length > 0 ? additionals.map(a => ({
     name: a.name,
@@ -88,7 +88,16 @@ export const updateProduct = async (
   const store = await getStoreByIdData(product.fk_store_id)
   if (!store || store.owner !== ownerId) throw new Error("Forbidden")
 
-  // Collect gallery rows to delete so we can remove files after transaction
+  // Upload new gallery files to Supabase
+  const uploadedGaleryPaths: string[] = []
+  if (files && files.length > 0) {
+    for (const file of files) {
+      const url = await uploadToSupabase(file, "products")
+      uploadedGaleryPaths.push(url)
+    }
+  }
+
+  // Collect gallery rows to delete so we can remove files from Supabase after transaction
   let galeryPathsToDelete: string[] = []
 
   if (productData.deleted_galery_ids && productData.deleted_galery_ids.length > 0) {
@@ -119,10 +128,10 @@ export const updateProduct = async (
     }
 
     // 3. Add new gallery images
-    if (files && files.length > 0) {
+    if (uploadedGaleryPaths.length > 0) {
       await tx.galery.createMany({
-        data: files.map(f => ({
-          galery_path: `uploads/${f.filename}`,
+        data: uploadedGaleryPaths.map(path => ({
+          galery_path: path,
           fk_product_id: productId
         }))
       })
@@ -159,8 +168,10 @@ export const updateProduct = async (
     }
   })
 
-  // Delete physical files AFTER transaction succeeds (so we don't lose files on rollback)
-  galeryPathsToDelete.forEach(deleteFile)
+  // Delete remote files AFTER transaction succeeds
+  for (const path of galeryPathsToDelete) {
+    await deleteFromSupabase(path)
+  }
 
   return await getProductByIdData(productId)
 }
@@ -172,7 +183,15 @@ export const deleteProduct = async (productId: number, ownerId: string) => {
   const store = await getStoreByIdData(product.fk_store_id)
   if (!store || store.owner !== ownerId) throw new Error("Forbidden")
 
+  // Collect gallery paths to delete from storage
+  const galeryPaths = product.Galery?.map(g => g.galery_path) || []
+
   const deleted = await deleteProductData(productId)
+
+  for (const path of galeryPaths) {
+    await deleteFromSupabase(path)
+  }
   
   return deleted
 }
+

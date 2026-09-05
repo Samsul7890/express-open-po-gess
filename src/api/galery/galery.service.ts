@@ -1,15 +1,7 @@
-import fs from "fs"
-import path from "path"
 import { createGaleryData, deleteGaleryData, getGaleryByIdData } from "./galery.data"
 import { getProductByIdData } from "../product/product.data"
 import { getStoreByIdData } from "../store/store.data"
-
-const deleteFile = (filePath: string) => {
-  const fullPath = path.join(process.cwd(), filePath)
-  if (fs.existsSync(fullPath)) {
-    fs.unlinkSync(fullPath)
-  }
-}
+import { uploadToSupabase, deleteFromSupabase } from "../../services/storage.service"
 
 export const createGaleryImage = async (
   productId: number,
@@ -24,8 +16,10 @@ export const createGaleryImage = async (
   const store = await getStoreByIdData(product.fk_store_id)
   if (!store || store.owner !== ownerId) throw new Error("Forbidden")
 
+  const galeryUrl = await uploadToSupabase(file, "products")
+
   return await createGaleryData({
-    galery_path: `uploads/${file.filename}`,
+    galery_path: galeryUrl,
     fk_product_id: productId,
   })
 }
@@ -44,7 +38,8 @@ export const deleteGaleryImage = async (
   if (!store || store.owner !== ownerId) throw new Error("Forbidden")
 
   const deleted = await deleteGaleryData(galeryId)
-  deleteFile(deleted.galery_path)
+  await deleteFromSupabase(deleted.galery_path)
   
   return deleted
 }
+

@@ -7,11 +7,21 @@ const envSchema = Joi.object({
   NODE_ENV: Joi.string().valid("development", "production", "test").default("development"),
   PORT: Joi.number().default(3000),
 
-  DB_HOST: Joi.string().required(),
+  // Database — single connection string (used by Prisma + pg pool)
+  DATABASE_URL: Joi.string().required(),
+  DIRECT_URL: Joi.string().optional(),
+
+  // Individual DB fields kept optional for local introspection/logging
+  DB_HOST: Joi.string().optional(),
   DB_PORT: Joi.number().default(5432),
-  DB_USER: Joi.string().required(),
-  DB_PASSWORD: Joi.string().required(),
-  DB_NAME: Joi.string().required(),
+  DB_USER: Joi.string().optional(),
+  DB_PASSWORD: Joi.string().optional(),
+  DB_NAME: Joi.string().optional(),
+
+  // Supabase (for Storage, Auth helpers, Realtime)
+  SUPABASE_URL: Joi.string().uri().optional(),
+  SUPABASE_SERVICE_ROLE_KEY: Joi.string().optional(),
+  SUPABASE_STORAGE_BUCKET: Joi.string().default("open-po-gess"),
 
   JWT_SECRET: Joi.string().min(16).required(),
   JWT_EXPIRES_IN: Joi.string().default("7d"),
@@ -34,12 +44,19 @@ if (error) {
 export const env = {
   nodeEnv: value.NODE_ENV as string,
   port: value.PORT as number,
+  databaseUrl: value.DATABASE_URL as string,
+  directUrl: value.DIRECT_URL as string | undefined,
   db: {
-    host: value.DB_HOST as string,
+    host: value.DB_HOST as string | undefined,
     port: value.DB_PORT as number,
-    user: value.DB_USER as string,
-    password: value.DB_PASSWORD as string,
-    name: value.DB_NAME as string,
+    user: value.DB_USER as string | undefined,
+    password: value.DB_PASSWORD as string | undefined,
+    name: value.DB_NAME as string | undefined,
+  },
+  supabase: {
+    url: value.SUPABASE_URL as string,
+    serviceRoleKey: value.SUPABASE_SERVICE_ROLE_KEY as string,
+    storageBucket: value.SUPABASE_STORAGE_BUCKET as string,
   },
   jwt: {
     secret: value.JWT_SECRET as string,
@@ -52,3 +69,4 @@ export const env = {
   },
   frontendUrl: value.FRONTEND_URL as string,
 }
+
