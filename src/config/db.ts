@@ -3,6 +3,9 @@ import { PrismaPg } from "@prisma/adapter-pg"
 import { PrismaClient } from "@prisma/client"
 import { env } from "./env"
 
+// Bypass strict SSL validation for Supabase connections on Vercel
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0"
+
 const dbUrl = env.databaseUrl
 const isRemoteDb = dbUrl.includes("supabase") || dbUrl.includes("pooler") || dbUrl.includes("sslmode=require") || !dbUrl.includes("localhost")
 
